@@ -26,6 +26,7 @@ const config: Config = {
   /**
    * Option merge strategies (used in core/util/options)
    */
+   // 这个是让用户定义的, 所以默认是空
   optionMergeStrategies: Object.create(null),
 
   /**

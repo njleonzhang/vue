@@ -24,6 +24,8 @@ const strats = config.optionMergeStrategies
 /**
  * Options with restrictions
  */
+ // optionMergeStrategies可以自定义,在这里进行处理异常
+ // https://vuejs.org.cn/guide/mixins.html#u81EA_u5B9A_u4E49_u9009_u9879_u5408_u5E76_u7B56_u7565
 if (process.env.NODE_ENV !== 'production') {
   strats.el = strats.propsData = function (parent, child, vm, key) {
     if (!vm) {
@@ -55,6 +57,7 @@ function mergeData (to: Object, from: ?Object): Object {
     toVal = to[key]
     fromVal = from[key]
     if (!hasOwn(to, key)) {
+      // 只merge from有但是to没有的属性, 有冲突的话以to为准, 所以to肯定要是child,也就是子组件
       set(to, key, fromVal)
     } else if (isObject(toVal) && isObject(fromVal)) {
       mergeData(toVal, fromVal)
@@ -72,7 +75,9 @@ strats.data = function (
   vm?: Component
 ): ?Function {
   if (!vm) {
+    // 是组件的时候
     // in a Vue.extend merge, both should be functions
+    // https://vuejs.org.cn/guide/components.html#组件选项问题
     if (!childVal) {
       return parentVal
     }
@@ -93,13 +98,38 @@ strats.data = function (
     // merged result of both functions... no need to
     // check if parentVal is a function here because
     // it has to be a function to pass previous merges.
+
+    // 有点绕, 不过确实如此, data如果是函数, 则merge完了还应该是函数,
+    // 此处分别执行2个data函数, 然后返回merge的函数. 例:
+
+    // data() {
+    //   return {
+    //     a: 1
+    //   }
+    // }
+    //
+    // data() {
+    //   return {
+    //     b: 2
+    //   }
+    // }
+    // merge 完了应该是:
+    // data() {
+    //   return {
+    //     a: 1,
+    //     b: 2
+    //   }
+    // }
+
     return function mergedDataFn () {
       return mergeData(
+        // 此处的this是什么?
         childVal.call(this),
         parentVal.call(this)
       )
     }
   } else if (parentVal || childVal) {
+    // instance时, 即new Vue()时, merge本身的option和Vue的一些default值
     return function mergedInstanceDataFn () {
       // instance merge
       const instanceData = typeof childVal === 'function'
@@ -127,7 +157,7 @@ function mergeHook (
   return childVal
     ? parentVal
       ? parentVal.concat(childVal)
-      : Array.isArray(childVal)
+      : Array.isArray(childVal) // childVal可能是array么?
         ? childVal
         : [childVal]
     : parentVal
@@ -161,6 +191,8 @@ config._assetTypes.forEach(function (type) {
  * Watchers hashes should not overwrite one
  * another, so we merge them as arrays.
  */
+
+ // watch 的值被merge成了Array
 strats.watch = function (parentVal: ?Object, childVal: ?Object): ?Object {
   /* istanbul ignore if */
   if (!childVal) return parentVal
@@ -194,6 +226,7 @@ strats.computed = function (parentVal: ?Object, childVal: ?Object): ?Object {
   return ret
 }
 
+// 以child的值为准
 /**
  * Default strategy.
  */
@@ -207,6 +240,7 @@ const defaultStrat = function (parentVal: any, childVal: any): any {
  * Make sure component options get converted to actual
  * constructors.
  */
+ // 处理注册语法糖等, https://vuejs.org.cn/guide/components.html#注册语法糖
 function normalizeComponents (options: Object) {
   if (options.components) {
     const components = options.components
@@ -232,6 +266,7 @@ function normalizeComponents (options: Object) {
  * Ensure all props option syntax are normalized into the
  * Object-based format.
  */
+ // 处理https://vuejs.org.cn/api/#props
 function normalizeProps (options: Object) {
   const props = options.props
   if (!props) return
@@ -263,6 +298,9 @@ function normalizeProps (options: Object) {
 /**
  * Normalize raw function directives into object format.
  */
+
+ // 指令直接传入一个函数的场景
+ // https://vuejs.org.cn/guide/custom-directive.html
 function normalizeDirectives (options: Object) {
   const dirs = options.directives
   if (dirs) {
@@ -284,15 +322,22 @@ export function mergeOptions (
   child: Object,
   vm?: Component
 ): Object {
+  // 处理本次传入的options的components属性
   normalizeComponents(child)
+  // 处理本次传入的options的props属性
   normalizeProps(child)
+  // 处理本次传入的options的directives属性
   normalizeDirectives(child)
+
+  // 处理https://vuejs.org.cn/api/#extends
   const extendsFrom = child.extends
   if (extendsFrom) {
     parent = typeof extendsFrom === 'function'
       ? mergeOptions(parent, extendsFrom.options, vm)
       : mergeOptions(parent, extendsFrom, vm)
   }
+
+  // 处理https://vuejs.org.cn/api/#mixins
   if (child.mixins) {
     for (let i = 0, l = child.mixins.length; i < l; i++) {
       let mixin = child.mixins[i]
@@ -309,6 +354,7 @@ export function mergeOptions (
   }
   for (key in child) {
     if (!hasOwn(parent, key)) {
+      // child有,但是parent没有的key
       mergeField(key)
     }
   }

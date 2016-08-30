@@ -26,7 +26,17 @@ export function initGlobalAPI (Vue: GlobalAPI) {
   Vue.delete = del
   Vue.nextTick = util.nextTick
 
+  // 清空Vue的options
   Vue.options = Object.create(null)
+
+  /**
+   * List of asset types that a component can own.
+   */
+  // _assetTypes: [
+  //   'component',
+  //   'directive',
+  //   'filter'
+  // ]
   config._assetTypes.forEach(type => {
     Vue.options[type + 's'] = Object.create(null)
   })
