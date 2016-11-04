@@ -29,8 +29,7 @@ export const observerState = {
  * Observer class that are attached to each observed
  * object. Once attached, the observer converts target
  * object's property keys into getter/setters that
- * collect dependencies and dispatches updates.
- */
+i9i89iii8999 */
 export class Observer {
   value: any;
   dep: Dep;
@@ -42,6 +41,7 @@ export class Observer {
     this.vmCount = 0
     def(value, '__ob__', this)
     if (Array.isArray(value)) {
+      // 如果要观察的是Array，则通过proto的拦截，来让数组本身具有reactive性，拦截一些改变数据的方法
       const augment = hasProto
         ? protoAugment
         : copyAugment
@@ -67,6 +67,7 @@ export class Observer {
   /**
    * Observe a list of Array items.
    */
+  // 观察Array的每一项
   observeArray (items: Array<any>) {
     for (let i = 0, l = items.length; i < l; i++) {
       observe(items[i])
@@ -105,18 +106,21 @@ function copyAugment (target: Object, src: Object, keys: Array<string>) {
  * or the existing observer if the value already has one.
  */
 export function observe (value: any): Observer | void {
+  // 确保不是原始类型
   if (!isObject(value)) {
     return
   }
+
   let ob: Observer | void
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
+    // 这个属性已经绑定到了Oberver对象，则直接返回这个ob对象
     ob = value.__ob__
   } else if (
     observerState.shouldConvert &&
     !config._isServer &&
     (Array.isArray(value) || isPlainObject(value)) &&
     Object.isExtensible(value) &&
-    !value._isVue
+    !value._isVue // value不能是vue对象
   ) {
     ob = new Observer(value)
   }
@@ -127,15 +131,16 @@ export function observe (value: any): Observer | void {
  * Define a reactive property on an Object.
  */
 export function defineReactive (
-  obj: Object,
-  key: string,
-  val: any,
+  obj: Object,  // 需要reactive化的对象，比如vm.options.data
+  key: string,  // 需要reactive化的属性
+  val: any,     // key对应的真实变量
   customSetter?: Function
 ) {
   const dep = new Dep()
 
   const property = Object.getOwnPropertyDescriptor(obj, key)
   if (property && property.configurable === false) {
+    // 不需要添加warning么？
     return
   }
 
@@ -143,20 +148,24 @@ export function defineReactive (
   const getter = property && property.get
   const setter = property && property.set
 
-  let childOb = observe(val)
-  Object.defineProperty(obj, key, {
+  let childOb = observe(val) // 为本属性的值设置Observe
+  Object.defineProperty(obj, key, { // 假设这里obj是data, key是text
     enumerable: true,
     configurable: true,
     get: function reactiveGetter () {
       const value = getter ? getter.call(obj) : val
-      if (Dep.target) {
-        dep.depend()
+      // 依赖收集的标志，区分是普通get还是依赖收集的get
+      if (Dep.target) { // Dep.target里是观察者watcher
+        dep.depend() // 将watcher（Dep.target）加入该属性的观察者列表，即观察该属性（这个属性的set被调用的时候触发, data.text = {a: 200}）或者 data.text = [1, 2]
         if (childOb) {
-          childOb.dep.depend()
+          childOb.dep.depend() // 将watcher（Dep.target）加入该属性value的Observer上的观察者列表中，
+                               // 对于对象而言，属性变动时，会触发notify，即$set()和$del 2个接口, 如data.text.a = 100
+                               // 对于Array而言，pop，push等Array操作会触发该notify（array.js里通过原型拦截实现）
         }
         if (Array.isArray(value)) {
           for (let e, i = 0, l = value.length; i < l; i++) {
             e = value[i]
+            // 如果返回的值是一个列表，则观察列表里的每一个值的__ob__属性
             e && e.__ob__ && e.__ob__.dep.depend()
           }
         }
@@ -176,7 +185,7 @@ export function defineReactive (
       } else {
         val = newVal
       }
-      childOb = observe(newVal)
+      childOb = observe(newVal) // 新设的值也要加入观察
       dep.notify()
     }
   })

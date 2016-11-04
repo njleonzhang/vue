@@ -99,6 +99,9 @@ export default class Watcher {
    */
   addDep (dep: Dep) {
     const id = dep.id
+    if (id === 5) {
+      console.log(id)
+    }
     if (!this.newDepIds.has(id)) {
       this.newDepIds.add(id)
       this.newDeps.push(dep)

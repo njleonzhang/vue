@@ -38,15 +38,19 @@ export function initMixin (Vue: Class<Component>) {
     }
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== 'production') {
-      initProxy(vm)
+      initProxy(vm) // 初始化proxy
     } else {
       vm._renderProxy = vm
     }
     // expose real self
     vm._self = vm
+    // 初始化生命周期的各个状态
     initLifecycle(vm)
+    // event的on和off方法绑定到当前实例上
     initEvents(vm)
+    // 调用brforeCreate的hook
     callHook(vm, 'beforeCreate')
+    // 对数据做初始化了,配置data和计算属性等
     initState(vm)
     callHook(vm, 'created')
     initRender(vm)

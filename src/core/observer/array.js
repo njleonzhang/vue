@@ -32,7 +32,7 @@ export const arrayMethods = Object.create(arrayProto)
       args[i] = arguments[i]
     }
     const result = original.apply(this, args)
-    const ob = this.__ob__
+    const ob = this.__ob__ // array的ob
     let inserted
     switch (method) {
       case 'push':
@@ -47,6 +47,7 @@ export const arrayMethods = Object.create(arrayProto)
     }
     if (inserted) ob.observeArray(inserted)
     // notify change
+    // 当watch一个array的时候，array被通过pop，splice等api修改时，会有通知array的ob
     ob.dep.notify()
     return result
   })

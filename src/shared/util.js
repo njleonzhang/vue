@@ -115,9 +115,9 @@ export function bind (fn: Function, ctx: Object): Function {
     const l: number = arguments.length
     return l
       ? l > 1
-        ? fn.apply(ctx, arguments)
-        : fn.call(ctx, a)
-      : fn.call(ctx)
+        ? fn.apply(ctx, arguments) // 2个以上参数
+        : fn.call(ctx, a) // 1个参数
+      : fn.call(ctx) // 0个参数
   }
   // record original fn length
   boundFn._length = fn.length

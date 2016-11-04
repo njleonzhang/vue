@@ -19,7 +19,8 @@ var demo = new Vue({
   },
 
   watch: {
-    currentBranch: 'fetchData'
+    currentBranch: 'fetchData',
+    commits: 'check'
   },
 
   filters: {
@@ -42,6 +43,10 @@ var demo = new Vue({
         console.log(self.commits[0].html_url)
       }
       xhr.send()
+    },
+
+    check: function(newValue) {
+      console.log(newValue)
     }
   }
 })

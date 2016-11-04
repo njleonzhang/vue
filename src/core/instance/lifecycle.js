@@ -191,11 +191,13 @@ export function lifecycleMixin (Vue: Class<Component>) {
 }
 
 export function callHook (vm: Component, hook: string) {
+  // 将挂在这个hook上得所有event都call一遍
   const handlers = vm.$options[hook]
   if (handlers) {
     for (let i = 0, j = handlers.length; i < j; i++) {
       handlers[i].call(vm)
     }
   }
+  // 这里触发一遍这个特别的event是干什么的？为了什么工具服务的么？
   vm.$emit('hook:' + hook)
 }

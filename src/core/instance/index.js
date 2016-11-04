@@ -12,6 +12,8 @@ function Vue (options) {
 
 // _init方法在initMixin里设置
 initMixin(Vue)
+
+// watcher相关
 stateMixin(Vue)
 eventsMixin(Vue)
 lifecycleMixin(Vue)
