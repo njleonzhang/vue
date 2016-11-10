@@ -53,16 +53,16 @@ export default class Watcher {
     this.cb = cb
     this.id = ++uid // uid for batching
     this.active = true
-    this.dirty = this.lazy // for lazy watchers
+    this.dirty = this.lazy // for lazy watchers // 初始值就是dirty
     this.deps = []
     this.newDeps = []
     this.depIds = new Set()
     this.newDepIds = new Set()
     // parse expression for getter
-    if (typeof expOrFn === 'function') {
+    if (typeof expOrFn === 'function') { // computed属性的时候，走的是这个逻辑，expOrFn这时候就是computed的get函数
       this.getter = expOrFn
     } else {
-      this.getter = parsePath(expOrFn)
+      this.getter = parsePath(expOrFn) // watch的时候走的这个逻辑，expOrFn在这里是watch的表达式'a', 'a.b.c'
       if (!this.getter) {
         this.getter = function () {}
         process.env.NODE_ENV !== 'production' && warn(
@@ -75,7 +75,7 @@ export default class Watcher {
     }
     this.value = this.lazy
       ? undefined
-      : this.get()
+      : this.get() // computed属性，lazy是true，所以肯定调用一次get，对watcher.value进行初始化和做依赖收集
   }
 
   /**
@@ -83,6 +83,9 @@ export default class Watcher {
    */
   get () {
     pushTarget(this)
+    // call一下getter函数，
+    // 对于computed属性，回去调用计算属性的方法，掉用计算属性方法，则会导致计算属性里相关的属性被访问，即他们的get会调用，进一步又导致了本watcher成为他们的依赖
+    // 对于watch，就是去访问一下访问一下a.b.c
     const value = this.getter.call(this.vm, this.vm)
     // "touch" every property so they are all tracked as
     // dependencies for deep watching
@@ -139,11 +142,14 @@ export default class Watcher {
   update () {
     /* istanbul ignore else */
     if (this.lazy) {
+      // 计算属性来说，只是将dirty设置成了true? !!!!!nice
+      // 原来这就是所谓的lazy，仅仅标记它为dirty，直到下次有人要访问这个值得时候，
+      // 他的值才会被更新，如果无人访问，则就是个dirty的值
       this.dirty = true
     } else if (this.sync) {
-      this.run()
+      this.run() // watch属性的逻辑
     } else {
-      queueWatcher(this)
+      queueWatcher(this) // render函数的逻辑
     }
   }
 

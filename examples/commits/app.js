@@ -18,8 +18,14 @@ var demo = new Vue({
     this.fetchData()
   },
 
+  computed: {
+    test: function() {
+      return this.commits && this.commits.length + Math.random()
+    }
+  },
+
   watch: {
-    currentBranch: 'fetchData',
+    'currentBranch': 'fetchData',
     commits: 'check'
   },
 

@@ -327,9 +327,10 @@ function def (obj, key, val, enumerable) {
 /**
  * Parse simple path.
  */
-var bailRE = /[^\w\.\$]/
+var bailRE = /[^\w\.\$]/ //包含除 0-9，a-z，A-Z，., $之外特殊字符的字符串
 function parsePath (path) {
   if (bailRE.test(path)) {
+    // 不需要warning么？
     return
   } else {
     var segments = path.split('.')
@@ -674,10 +675,10 @@ var Watcher = function Watcher (
   this.depIds = new _Set()
   this.newDepIds = new _Set()
   // parse expression for getter
-  if (typeof expOrFn === 'function') {
+  if (typeof expOrFn === 'function') { // computed属性的时候，走的是这个逻辑，expOrFn这时候就是computed的get函数
     this.getter = expOrFn
   } else {
-    this.getter = parsePath(expOrFn)
+    this.getter = parsePath(expOrFn) // watch的时候走的这个逻辑，expOrFn在这里是watch的表达式'a', 'a.b.c'
     if (!this.getter) {
       this.getter = function () {}
       "development" !== 'production' && warn(
@@ -698,6 +699,7 @@ var Watcher = function Watcher (
  */
 Watcher.prototype.get = function get () {
   pushTarget(this)
+  // call一下getter函数，即watch的callback，会导致所有相关的属性都会被这个这个watcher追踪
   var value = this.getter.call(this.vm, this.vm)
   // "touch" every property so they are all tracked as
   // dependencies for deep watching
@@ -770,8 +772,8 @@ Watcher.prototype.update = function update () {
  */
 Watcher.prototype.run = function run () {
   if (this.active) {
-      var value = this.get()
-    if (
+    var value = this.get()
+      if (
       value !== this.value ||
       // Deep watchers and watchers on Object/Arrays should fire even
       // when the value is the same, because the value may
@@ -1246,9 +1248,35 @@ function initComputed (vm) {
     for (var key in computed) {
       var userDef = computed[key]
       if (typeof userDef === 'function') {
+        // 如果是函数，说明是get函数
+        /*
+        computed: {
+          // 一个计算属性的 getter
+          b: function () {
+            // `this` 指向 vm 实例
+            return this.a + 1
+          }
+        }
+        */
         computedSharedDefinition.get = makeComputedGetter(userDef, vm)
         computedSharedDefinition.set = noop
       } else {
+        /*
+        computed: {
+          fullName: {
+            // getter
+            get: function () {
+              return this.firstName + ' ' + this.lastName
+            },
+            // setter
+            set: function (newValue) {
+              var names = newValue.split(' ')
+              this.firstName = names[0]
+              this.lastName = names[names.length - 1]
+            }
+          }
+        }
+        */
         computedSharedDefinition.get = userDef.get
           ? userDef.cache !== false
             ? makeComputedGetter(userDef.get, vm)
@@ -1258,6 +1286,7 @@ function initComputed (vm) {
           ? bind(userDef.set, vm)
           : noop
       }
+
       Object.defineProperty(vm, key, computedSharedDefinition)
     }
   }
@@ -1267,6 +1296,8 @@ function makeComputedGetter (getter, owner) {
   var watcher = new Watcher(owner, getter, noop, {
     lazy: true
   })
+
+  // 这个get是如何被触发的呢？，当数据变得时候只要访问一些这个计算属性就好了
   return function computedGetter () {
     if (watcher.dirty) {
       watcher.evaluate()

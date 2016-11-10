@@ -23,9 +23,10 @@ export function def (obj: Object, key: string, val: any, enumerable?: boolean) {
 /**
  * Parse simple path.
  */
-const bailRE = /[^\w\.\$]/
+const bailRE = /[^\w\.\$]/ //包含除 0-9，a-z，A-Z，., $之外特殊字符的字符串
 export function parsePath (path: string): any {
   if (bailRE.test(path)) {
+    // 不需要warning么？
     return
   } else {
     const segments = path.split('.')

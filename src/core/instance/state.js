@@ -106,9 +106,35 @@ function initComputed (vm: Component) {
     for (const key in computed) {
       const userDef = computed[key]
       if (typeof userDef === 'function') {
-        computedSharedDefinition.get = makeComputedGetter(userDef, vm)
+        // 如果是函数，说明是get函数
+        /*
+        computed: {
+          // 一个计算属性的 getter
+          b: function () {
+            // `this` 指向 vm 实例
+            return this.a + 1
+          }
+        }
+        */
+        computedSharedDefinition.get = makeComputedGetter(userDef, vm) // 简历watcher
         computedSharedDefinition.set = noop
       } else {
+        /*
+        computed: {
+          fullName: {
+            // getter
+            get: function () {
+              return this.firstName + ' ' + this.lastName
+            },
+            // setter
+            set: function (newValue) {
+              var names = newValue.split(' ')
+              this.firstName = names[0]
+              this.lastName = names[names.length - 1]
+            }
+          }
+        }
+        */
         computedSharedDefinition.get = userDef.get
           ? userDef.cache !== false
             ? makeComputedGetter(userDef.get, vm)
@@ -118,6 +144,8 @@ function initComputed (vm: Component) {
           ? bind(userDef.set, vm)
           : noop
       }
+
+      // 将computed属性直接定义到vm上，并且设置好了get和set
       Object.defineProperty(vm, key, computedSharedDefinition)
     }
   }
@@ -126,7 +154,10 @@ function initComputed (vm: Component) {
 function makeComputedGetter (getter: Function, owner: Component): Function {
   const watcher = new Watcher(owner, getter, noop, {
     lazy: true
-  })
+  }) // 这里对watcher.value进行了初始化
+
+  // 当计算属性依赖的属性改变的时候，get并不会被直接调用来，更新它的值，
+  // 而只是把watcher的dirty设置成为了true
   return function computedGetter () {
     if (watcher.dirty) {
       watcher.evaluate()
