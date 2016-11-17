@@ -36,6 +36,7 @@ export function compile (
   return baseCompile(template, options)
 }
 
+// 编译函数，从template到render
 export function compileToFunctions (
   template: string,
   options?: CompilerOptions,

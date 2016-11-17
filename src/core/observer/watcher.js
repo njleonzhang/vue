@@ -82,7 +82,7 @@ export default class Watcher {
    * Evaluate the getter, and re-collect dependencies.
    */
   get () {
-    pushTarget(this)
+    pushTarget(this) // 设置依赖收集标志
     // call一下getter函数，
     // 对于computed属性，回去调用计算属性的方法，掉用计算属性方法，则会导致计算属性里相关的属性被访问，即他们的get会调用，进一步又导致了本watcher成为他们的依赖
     // 对于watch，就是去访问一下访问一下a.b.c
@@ -147,7 +147,7 @@ export default class Watcher {
       // 他的值才会被更新，如果无人访问，则就是个dirty的值
       this.dirty = true
     } else if (this.sync) {
-      this.run() // watch属性的逻辑
+      this.run() // watcher属性的逻辑
     } else {
       queueWatcher(this) // render函数的逻辑
     }
@@ -157,9 +157,10 @@ export default class Watcher {
    * Scheduler job interface.
    * Will be called by the scheduler.
    */
+  // watcher变化时用于调用其回调函数
   run () {
     if (this.active) {
-      const value = this.get()
+      const value = this.get() // 这里会触发依赖收集么？为什么需要？
       if (
         value !== this.value ||
         // Deep watchers and watchers on Object/Arrays should fire even
@@ -205,6 +206,7 @@ export default class Watcher {
   /**
    * Depend on all deps collected by this watcher.
    */
+  // 当别人依赖我时，我的所有依赖将变成那个人的依赖？依赖岂不是重复了
   depend () {
     let i = this.deps.length
     while (i--) {

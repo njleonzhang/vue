@@ -19,6 +19,10 @@ var demo = new Vue({
   },
 
   computed: {
+    test1: function() {
+      return this.test
+    },
+
     test: function() {
       return this.commits && this.commits.length + Math.random()
     }

@@ -162,6 +162,7 @@ function makeComputedGetter (getter: Function, owner: Component): Function {
     if (watcher.dirty) {
       watcher.evaluate()
     }
+    // computed属性也可以是别人的依赖
     if (Dep.target) {
       watcher.depend()
     }
@@ -169,6 +170,7 @@ function makeComputedGetter (getter: Function, owner: Component): Function {
   }
 }
 
+// 将method帮到vue实例上，方便this.methodName的这种快捷调用
 function initMethods (vm: Component) {
   const methods = vm.$options.methods
   if (methods) {

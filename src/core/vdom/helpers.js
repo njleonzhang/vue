@@ -77,13 +77,13 @@ export function mergeVNodeHook (def: Object, key: string, hook: Function) {
 }
 
 export function updateListeners (
-  on: Object,
-  oldOn: Object,
-  add: Function,
-  remove: Function
+  on: Object,      // 新的listener对象, 列：{change: function() {}}
+  oldOn: Object,   // 老的listener对象
+  add: Function,   // 添加的方法
+  remove: Function // remove的方法
 ) {
   let name, cur, old, fn, event, capture
-  for (name in on) {
+  for (name in on) { // 便利新的listener里的选项
     cur = on[name]
     old = oldOn[name]
     if (!cur) {

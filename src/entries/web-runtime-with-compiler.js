@@ -27,16 +27,20 @@ Vue.prototype.$mount = function (
 
   const options = this.$options
   // resolve template/el and convert to render function
+  // 只有没有render函数的时候才做compliler，所有render函数优先级高于template和el
   if (!options.render) {
     let template = options.template
     let isFromDOM = false
     if (template) {
+      // 如果有template参数
       if (typeof template === 'string') {
+        // #开头的字符串会被当做querySelect来查找template
         if (template.charAt(0) === '#') {
           isFromDOM = true
           template = idToTemplate(template)
         }
       } else if (template.nodeType) {
+        // template选项直接是一个dom elment
         isFromDOM = true
         template = template.innerHTML
       } else {
@@ -46,6 +50,7 @@ Vue.prototype.$mount = function (
         return this
       }
     } else if (el) {
+      // 如果有el参数
       isFromDOM = true
       template = getOuterHTML(el)
     }
@@ -55,7 +60,7 @@ Vue.prototype.$mount = function (
         isFromDOM,
         shouldDecodeTags,
         delimiters: options.delimiters
-      }, this)
+      }, this) // 对template进行编译，得到render函数和staticRenderFns
       options.render = render
       options.staticRenderFns = staticRenderFns
     }
